@@ -1,5 +1,34 @@
 # Javka - Local DEV Environment
 
+## Containers
+
+### Application Container
+
+```
+localhost:8080
+```
+
+### PhpMyAdmin Container
+
+```
+localhost:8081
+```
+### MySQL Container
+
+```
+database host: localhost
+database name: mydatabase
+Port: 3306
+
+### user account ###
+username: user
+password: password
+
+### root account ###
+user: root
+password: rootpassword
+```
+
 ## Docker Compose Command List
 
 ### Run all commands in path: ROOT/.dev/ 
