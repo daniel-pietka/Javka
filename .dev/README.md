@@ -2,6 +2,12 @@
 
 ## Docker Compose Command List
 
+### Run all commands in path: ROOT/.dev/ 
+
+```bash
+cd .dev
+```
+
 ### Build and Start Docker Environment in Detached Mode (Daemon)
 
 ```bash
