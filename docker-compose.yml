@@ -1,0 +1,58 @@
+services:
+  java_app:
+    container_name: java_app
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - java_db
+    networks:
+      - java_network
+    volumes:
+      - ./src:/app/src
+      - ./pom.xml:/app/pom.xml
+    restart: unless-stopped
+    #restart: no              # The container will not be restarted, no matter how it exits.
+    #restart: on-failure      # The container will restart only if it exits with an error.
+    #restart: unless-stopped  # The container will always restart unless manually stopped.
+    #restart: always          # The container will always restart, regardless of how it exits.
+
+
+  java_db:
+    image: mysql:8
+    container_name: java_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: mydatabase
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: rootpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - java_network
+
+  java_phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: java_phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: java_db
+      MYSQL_ROOT_PASSWORD: rootpassword
+    ports:
+      - "8081:80"
+    networks:
+      - java_network
+    depends_on:
+      - java_db
+
+networks:
+  java_network:
+    driver: bridge
+
+volumes:
+  db_data:
