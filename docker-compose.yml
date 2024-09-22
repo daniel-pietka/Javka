@@ -1,6 +1,6 @@
 services:
-  java_app:
-    container_name: java_app
+  java_app_compile:
+    container_name: java_app_compile
     build:
       context: .
       dockerfile: ./Dockerfile
@@ -13,12 +13,36 @@ services:
     volumes:
       - ./src:/app/src
       - ./pom.xml:/app/pom.xml
-    restart: unless-stopped
+    command: >
+      sh -c "mvn clean compile exec:java -Dexec.mainClass=com.danielpietka.app.Main"
+    restart: "no"
+    working_dir: /app
+
+  java_app_package:
+    container_name: java_app_package
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - java_db
+    networks:
+      - java_network
+    volumes:
+      - ./target:/app/target:cached
+    command: >
+      sh -c "if [ -f target/JAR/javka-app-1.0.jar ] && [ -f target/JAR/config/config.properties ]; then
+        java -jar target/JAR/javka-app-1.0.jar;
+      else
+        echo 'Error: target/JAR/javka-app-1.0.jar not found!' && exit 1;
+      fi"
+    restart: "no"
     #restart: no              # The container will not be restarted, no matter how it exits.
     #restart: on-failure      # The container will restart only if it exits with an error.
     #restart: unless-stopped  # The container will always restart unless manually stopped.
     #restart: always          # The container will always restart, regardless of how it exits.
-
+    working_dir: /app
 
   java_db:
     image: mysql:8
