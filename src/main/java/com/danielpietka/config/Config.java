@@ -1,4 +1,4 @@
-package config;
+package com.danielpietka.config;
 
 import java.io.InputStream;
 import java.io.IOException;
@@ -8,7 +8,7 @@ public class Config {
     private final Properties properties = new Properties();
 
     public Config() {
-        try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream("config.properties")) {
+        try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream("config/config.properties")) {
             if (inputStream == null) {
                 System.out.println("Sorry, unable to find config.properties");
                 return;
