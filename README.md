@@ -47,11 +47,6 @@ Upon restarting Docker, the application will run the latest version of the code.
 
 ## Docker commands list
 
-```bash
-docker compose up java_app_compile
-docker compose up java_app_package
-```
-
 ### Build Docker
 ```bash
 docker compose build
@@ -112,14 +107,20 @@ docker compose down -v
 docker compose restart
 ```
 
-### Connect Java Container
+### Connect Java Container (java_app_compile)
 - connect to the Java Application Container (SSH)
 ```bash
-docker exec -it java_app bash
+docker exec -it java_app_compile bash
+```
+
+### Connect Java Container (java_app_package)
+- connect to the Java Application Container (SSH)
+```bash
+docker exec -it java_app_package bash
 ```
 
 ### Connect to MySQL Container
-- connect to the MySQL com.danielpietka.database Container (SSH)
+- connect to the MySQL database Container (SSH)
 ```bash
 docker exec -it java_db bash
 ```
