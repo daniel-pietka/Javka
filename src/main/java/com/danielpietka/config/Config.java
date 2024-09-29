@@ -8,7 +8,9 @@ public class Config {
     private final Properties properties = new Properties();
 
     public Config() {
-        try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream("config/config.properties")) {
+        try {
+            InputStream inputStream = getClass().getClassLoader().getResourceAsStream("config/config.properties");
+
             if (inputStream == null) {
                 System.out.println("Sorry, unable to find config.properties");
                 return;
