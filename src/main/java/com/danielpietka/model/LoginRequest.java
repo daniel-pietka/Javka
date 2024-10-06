@@ -1,23 +1,8 @@
 package com.danielpietka.model;
 
-public class UserModel {
-    private int id;
+public class LoginRequest {
     private String username;
     private String password;
-
-    public UserModel(int id, String username, String password) {
-        this.id = id;
-        this.username = username;
-        this.password = password;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
 
     public String getUsername() {
         return username;

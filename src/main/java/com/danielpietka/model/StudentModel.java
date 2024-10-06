@@ -1,23 +1,35 @@
 package com.danielpietka.model;
 
+import java.sql.Date;
+import java.time.LocalDateTime;
+
 public class StudentModel {
     private int id;
     private String firstName;
     private String lastName;
     private String email;
-    private int age;
+    private Date birthDate;
     private String address;
     private String phoneNumber;
+    private String gender;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private boolean isActive;
 
-    public StudentModel(int id, String firstName, String lastName, String email, int age,
-                        String address, String phoneNumber) {
+    public StudentModel(int id, String firstName, String lastName, String email, Date birthDate,
+                        String address, String phoneNumber, String gender, LocalDateTime createdAt,
+                        LocalDateTime updatedAt, boolean isActive) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
-        this.age = age;
+        this.birthDate = birthDate;
         this.address = address;
         this.phoneNumber = phoneNumber;
+        this.gender = gender;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.isActive = isActive;
     }
 
     public int getId() {
@@ -52,12 +64,12 @@ public class StudentModel {
         this.email = email;
     }
 
-    public int getAge() {
-        return age;
+    public Date getBirthDate() {
+        return birthDate;
     }
 
-    public void setAge(int age) {
-        this.age = age;
+    public void setBirthDate(Date birthDate) {
+        this.birthDate = birthDate;
     }
 
     public String getAddress() {
@@ -76,16 +88,35 @@ public class StudentModel {
         this.phoneNumber = phoneNumber;
     }
 
-    @Override
-    public String toString() {
-        return "StudentModel{" +
-                "id=" + id +
-                ", firstName='" + firstName + '\'' +
-                ", lastName='" + lastName + '\'' +
-                ", email='" + email + '\'' +
-                ", age=" + age +
-                ", address='" + address + '\'' +
-                ", phoneNumber='" + phoneNumber + '\'' +
-                '}';
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        isActive = active;
     }
 }

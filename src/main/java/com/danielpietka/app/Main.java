@@ -1,24 +1,34 @@
 package com.danielpietka.app;
 
-import com.danielpietka.database.Install;
+import com.danielpietka.database.ConnectionManager;
+import com.danielpietka.handler.UserHandler;
+import com.danielpietka.resource.UserResource;
 import com.danielpietka.server.ApiHttpServer;
-import com.danielpietka.util.LoggerConfig;
+import com.danielpietka.service.UserService;
 
-import java.io.IOException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Main {
-    private static final Logger logger = Logger.getLogger(Main.class.getName());
-
     public static void main(String[] args) {
-        LoggerConfig.setupLogger();
-
-        try {
-            Install.installSchema();
-            ApiHttpServer.startServer();
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, "Server failed to start: ", e);
+        if (args.length == 0 || "server".equalsIgnoreCase(args[0])) {
+            startServer();
+        } else {
+            startCommandLineMode(args);
         }
+    }
+
+    private static void startServer() {
+        try {
+            ApiHttpServer.startServer();
+        } catch (Exception e) {
+            System.err.println("Failed to start the server: " + e.getMessage());
+        }
+    }
+
+    private static void startCommandLineMode(String[] args) {
+        UserResource userResource = new UserResource();
+        UserService userService = new UserService(userResource);
+        UserHandler userHandler = new UserHandler(userService, args);
+        userHandler.handleCommand();
     }
 }

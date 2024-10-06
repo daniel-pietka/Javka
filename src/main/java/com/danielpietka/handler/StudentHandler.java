@@ -1,29 +1,35 @@
 package com.danielpietka.handler;
 
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpExchange;
-import com.google.gson.Gson;
+import com.danielpietka.database.ConnectionManager;
 import com.danielpietka.model.StudentModel;
 import com.danielpietka.resource.StudentResource;
+import com.danielpietka.util.ErrorResponse;
 import com.danielpietka.util.RequestHelper;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class StudentHandler implements HttpHandler {
-    private final StudentResource studentResource;
-    private static final Gson gson = new Gson();
+    private static final Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd").create();
     private static final Logger logger = Logger.getLogger(StudentHandler.class.getName());
+    private final StudentResource studentResource;
 
-    public StudentHandler(Connection connection) {
-        this.studentResource = new StudentResource(connection);
+    public StudentHandler() {
+        this.studentResource = new StudentResource();
     }
 
     @Override
@@ -34,80 +40,95 @@ public class StudentHandler implements HttpHandler {
         try {
             String requestMethod = RequestHelper.getRequestMethod(exchange);
             String requestUri = RequestHelper.getRequestURI(exchange);
-            InputStreamReader reader;
 
             switch (requestMethod) {
                 case "GET":
-                    if (requestUri.matches("/api/students/\\d+")) {
-                        int studentId = RequestHelper.extractIdFromUri(requestUri, "/api/students/");
-                        StudentModel student = studentResource.getStudentById(studentId);
-                        if (student != null) {
-                            response = gson.toJson(student);
-                        } else {
-                            response = "Student not found";
-                            statusCode = 404;
-                        }
-                    } else {
-                        Map<String, String> queryParams = RequestHelper.getQueryParams(exchange);
-                        int limit = queryParams.containsKey("limit") ? Integer.parseInt(queryParams.get("limit")) : 10;
-                        int offset = queryParams.containsKey("offset") ? Integer.parseInt(queryParams.get("offset")) : 0;
-
-                        List<StudentModel> students = studentResource.getStudents(limit, offset);
-                        response = gson.toJson(students);
-                    }
+                    response = handleGetRequest(exchange, requestUri);
                     break;
-
                 case "POST":
-                    reader = new InputStreamReader(exchange.getRequestBody());
-                    StudentModel newStudent = gson.fromJson(reader, StudentModel.class);
-                    if (isValidStudent(newStudent)) {
-                        studentResource.addStudent(newStudent);
-                        response = "Student added successfully";
-                        statusCode = 201;
-                    } else {
-                        response = "Invalid student data";
-                        statusCode = 400;
-                    }
+                    response = handlePostRequest(exchange);
+                    statusCode = 201; // Created
                     break;
-
                 case "PUT":
-                    reader = new InputStreamReader(exchange.getRequestBody());
-                    StudentModel updatedStudent = gson.fromJson(reader, StudentModel.class);
-                    if (isValidStudent(updatedStudent)) {
-                        studentResource.updateStudent(updatedStudent);
-                        response = "Student updated successfully";
-                    } else {
-                        response = "Invalid student data";
-                        statusCode = 400;
-                    }
+                    response = handlePutRequest(exchange);
                     break;
-
                 case "DELETE":
-                    int studentId = RequestHelper.extractIdFromUri(requestUri, "/api/students/");
-                    studentResource.deleteStudent(studentId);
-                    response = "Student deleted successfully";
-                    statusCode = 204;
+                    response = handleDeleteRequest(requestUri);
+                    statusCode = 204; // No Content
                     break;
-
                 default:
-                    response = "HTTP method not supported";
+                    response = gson.toJson(new ErrorResponse("Method Not Allowed", "HTTP method not supported"));
                     statusCode = 405;
                     break;
             }
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Database error: ", e);
-            response = "Database error";
+            response = gson.toJson(new ErrorResponse("Internal Server Error", "Database error"));
             statusCode = 500;
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Server error: ", e);
-            response = "Server error";
+            response = gson.toJson(new ErrorResponse("Internal Server Error", "Server error"));
             statusCode = 500;
         }
 
+        sendResponse(exchange, response, statusCode);
+    }
+
+    private String handleGetRequest(HttpExchange exchange, String requestUri) throws SQLException, UnsupportedEncodingException {
+        if (requestUri.matches("/api/students/\\d+")) {
+            int studentId = RequestHelper.extractIdFromUri(requestUri, "/api/students/");
+            StudentModel student = studentResource.getStudentById(studentId);
+            if (student != null) {
+                return gson.toJson(student);
+            } else {
+                return gson.toJson(new ErrorResponse("Not Found", "Student not found"));
+            }
+        } else {
+            Map<String, String> queryParams = RequestHelper.getQueryParams(exchange);
+            int limit = queryParams.containsKey("limit") ? Integer.parseInt(queryParams.get("limit")) : 10;
+            int offset = queryParams.containsKey("offset") ? Integer.parseInt(queryParams.get("offset")) : 0;
+            List<StudentModel> students = studentResource.getStudents(limit, offset);
+            return gson.toJson(students);
+        }
+    }
+
+    private String handlePostRequest(HttpExchange exchange) throws IOException, SQLException {
+        InputStreamReader reader = new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8);
+        StudentModel newStudent = gson.fromJson(reader, StudentModel.class);
+        if (isValidStudent(newStudent)) {
+            newStudent.setCreatedAt(LocalDateTime.now());
+            newStudent.setUpdatedAt(LocalDateTime.now());
+            newStudent.setActive(true);
+            studentResource.addStudent(newStudent);
+            return "Student added successfully";
+        } else {
+            return gson.toJson(new ErrorResponse("Bad Request", "Invalid student data"));
+        }
+    }
+
+    private String handlePutRequest(HttpExchange exchange) throws IOException, SQLException {
+        InputStreamReader reader = new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8);
+        StudentModel updatedStudent = gson.fromJson(reader, StudentModel.class);
+        if (isValidStudent(updatedStudent)) {
+            updatedStudent.setUpdatedAt(LocalDateTime.now());
+            studentResource.updateStudent(updatedStudent);
+            return "Student updated successfully";
+        } else {
+            return gson.toJson(new ErrorResponse("Bad Request", "Invalid student data"));
+        }
+    }
+
+    private String handleDeleteRequest(String requestUri) throws SQLException {
+        int studentId = RequestHelper.extractIdFromUri(requestUri, "/api/students/");
+        studentResource.deleteStudent(studentId);
+        return "Student deleted successfully";
+    }
+
+    private void sendResponse(HttpExchange exchange, String response, int statusCode) throws IOException {
         exchange.sendResponseHeaders(statusCode, response.getBytes().length);
-        OutputStream os = exchange.getResponseBody();
-        os.write(response.getBytes());
-        os.close();
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(response.getBytes());
+        }
     }
 
     private boolean isValidStudent(StudentModel student) {
