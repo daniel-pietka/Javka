@@ -1,6 +1,5 @@
 package com.danielpietka.app;
 
-import com.danielpietka.database.ConnectionManager;
 import com.danielpietka.handler.UserHandler;
 import com.danielpietka.resource.UserResource;
 import com.danielpietka.server.ApiHttpServer;
@@ -10,7 +9,7 @@ import java.util.logging.Logger;
 
 public class Main {
     public static void main(String[] args) {
-        if (args.length == 0 || "server".equalsIgnoreCase(args[0])) {
+        if (args.length == 0) {
             startServer();
         } else {
             startCommandLineMode(args);
