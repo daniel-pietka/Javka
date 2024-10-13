@@ -1,6 +1,5 @@
 package com.danielpietka.handler;
 
-import com.danielpietka.database.ConnectionManager;
 import com.danielpietka.model.StudentModel;
 import com.danielpietka.resource.StudentResource;
 import com.danielpietka.util.ErrorResponse;
@@ -12,10 +11,8 @@ import com.sun.net.httpserver.HttpHandler;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,8 +25,8 @@ public class StudentHandler implements HttpHandler {
     private static final Logger logger = Logger.getLogger(StudentHandler.class.getName());
     private final StudentResource studentResource;
 
-    public StudentHandler() {
-        this.studentResource = new StudentResource();
+    public StudentHandler(StudentResource studentResource) {
+        this.studentResource = studentResource;
     }
 
     @Override
@@ -47,14 +44,14 @@ public class StudentHandler implements HttpHandler {
                     break;
                 case "POST":
                     response = handlePostRequest(exchange);
-                    statusCode = 201; // Created
+                    statusCode = 201;
                     break;
                 case "PUT":
                     response = handlePutRequest(exchange);
                     break;
                 case "DELETE":
                     response = handleDeleteRequest(requestUri);
-                    statusCode = 204; // No Content
+                    statusCode = 204;
                     break;
                 default:
                     response = gson.toJson(new ErrorResponse("Method Not Allowed", "HTTP method not supported"));
@@ -74,21 +71,26 @@ public class StudentHandler implements HttpHandler {
         sendResponse(exchange, response, statusCode);
     }
 
-    private String handleGetRequest(HttpExchange exchange, String requestUri) throws SQLException, UnsupportedEncodingException {
-        if (requestUri.matches("/api/students/\\d+")) {
-            int studentId = RequestHelper.extractIdFromUri(requestUri, "/api/students/");
-            StudentModel student = studentResource.getStudentById(studentId);
-            if (student != null) {
-                return gson.toJson(student);
+    private String handleGetRequest(HttpExchange exchange, String requestUri) throws SQLException {
+        try {
+            if (requestUri.matches("/api/students/\\d+")) {
+                int studentId = RequestHelper.extractIdFromUri(requestUri, "/api/students/");
+                StudentModel student = studentResource.getStudentById(studentId);
+                if (student != null) {
+                    return gson.toJson(student);
+                } else {
+                    return gson.toJson(new ErrorResponse("Not Found", "Student not found"));
+                }
             } else {
-                return gson.toJson(new ErrorResponse("Not Found", "Student not found"));
+                Map<String, String> queryParams = RequestHelper.getQueryParams(exchange);
+                int limit = queryParams.containsKey("limit") ? Integer.parseInt(queryParams.get("limit")) : 10;
+                int offset = queryParams.containsKey("offset") ? Integer.parseInt(queryParams.get("offset")) : 0;
+                List<StudentModel> students = studentResource.getStudents(limit, offset);
+                return gson.toJson(students);
             }
-        } else {
-            Map<String, String> queryParams = RequestHelper.getQueryParams(exchange);
-            int limit = queryParams.containsKey("limit") ? Integer.parseInt(queryParams.get("limit")) : 10;
-            int offset = queryParams.containsKey("offset") ? Integer.parseInt(queryParams.get("offset")) : 0;
-            List<StudentModel> students = studentResource.getStudents(limit, offset);
-            return gson.toJson(students);
+        } catch (UnsupportedEncodingException e) {
+            logger.log(Level.SEVERE, "Unsupported encoding error", e);
+            throw new SQLException("Failed to process the request", e);
         }
     }
 
@@ -126,9 +128,8 @@ public class StudentHandler implements HttpHandler {
 
     private void sendResponse(HttpExchange exchange, String response, int statusCode) throws IOException {
         exchange.sendResponseHeaders(statusCode, response.getBytes().length);
-        try (OutputStream os = exchange.getResponseBody()) {
-            os.write(response.getBytes());
-        }
+        exchange.getResponseBody().write(response.getBytes());
+        exchange.getResponseBody().close();
     }
 
     private boolean isValidStudent(StudentModel student) {

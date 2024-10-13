@@ -3,7 +3,9 @@ services:
     container_name: java_app_compile
     build:
       context: .
-      dockerfile: ./Dockerfile
+      dockerfile: Dockerfile
+      args:
+        MODE: compile
     ports:
       - "8080:8080"
     depends_on:
@@ -24,6 +26,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        MODE: jar
     ports:
       - "8080:8080"
     depends_on:
@@ -32,13 +36,20 @@ services:
     networks:
       - java_network
     volumes:
-      - ./target:/app/target:cached
+#      - ./target:/app/target:cached
+      - ./src:/app/src
+      - ./pom.xml:/app/pom.xml
+      - ~/.m2:/root/.m2
     command: >
-      sh -c "if [ -f target/JAR/javka-app-1.0.jar ] && [ -f target/JAR/config/config.properties ]; then
-        java -jar target/JAR/javka-app-1.0.jar;
-      else
-        echo 'Error: target/JAR/javka-app-1.0.jar not found!' && exit 1;
-      fi"
+      java -cp target/JAR/javka-app-1.0.jar:/root/.m2/repository/* com.danielpietka.app.Main
+
+#      sh -c "mvn clean install package && java -cp target/JAR/javka-app-1.0.jar:/root/.m2/repository/* com.danielpietka.app.Main"
+#      sh -c "mvn clean install package && java -jar target/JAR/javka-app-1.0.jar"
+#      sh -c "if [ -f target/JAR/javka-app-1.0.jar ] && [ -f target/JAR/config/config.properties ]; then
+#        java -jar target/JAR/javka-app-1.0.jar;
+#      else
+#        echo 'Error: target/JAR/javka-app-1.0.jar not found!' && exit 1;
+#      fi"
     restart: "no"
     #restart: no              # The container will not be restarted, no matter how it exits.
     #restart: on-failure      # The container will restart only if it exits with an error.

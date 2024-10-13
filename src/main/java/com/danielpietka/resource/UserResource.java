@@ -11,10 +11,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UserResource {
+    private final ConnectionManager connectionManager;
+
+    public UserResource(ConnectionManager connectionManager) {
+        this.connectionManager = connectionManager;
+    }
 
     public void addUser(UserModel user) throws SQLException {
         String query = "INSERT INTO users (username, password) VALUES (?, ?)";
-        try (Connection connection = ConnectionManager.getInstance().getConnection();
+        try (Connection connection = connectionManager.getConnection();
              PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setString(1, user.getUsername());
             stmt.setString(2, user.getPassword());
@@ -24,7 +29,7 @@ public class UserResource {
 
     public void updateUser(UserModel user) throws SQLException {
         String query = "UPDATE users SET username = ?, password = ? WHERE id = ?";
-        try (Connection connection = ConnectionManager.getInstance().getConnection();
+        try (Connection connection = connectionManager.getConnection();
              PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setString(1, user.getUsername());
             stmt.setString(2, user.getPassword());
@@ -35,7 +40,7 @@ public class UserResource {
 
     public void deleteUser(int userId) throws SQLException {
         String query = "DELETE FROM users WHERE id = ?";
-        try (Connection connection = ConnectionManager.getInstance().getConnection();
+        try (Connection connection = connectionManager.getConnection();
              PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setInt(1, userId);
             stmt.executeUpdate();
@@ -44,7 +49,7 @@ public class UserResource {
 
     public UserModel getUserById(int userId) throws SQLException {
         String query = "SELECT * FROM users WHERE id = ?";
-        try (Connection connection = ConnectionManager.getInstance().getConnection();
+        try (Connection connection = connectionManager.getConnection();
              PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setInt(1, userId);
             try (ResultSet rs = stmt.executeQuery()) {
@@ -62,7 +67,7 @@ public class UserResource {
 
     public UserModel getUserByUsernameAndPassword(String username, String password) throws SQLException {
         String query = "SELECT * FROM users WHERE username = ? AND password = ?";
-        try (Connection connection = ConnectionManager.getInstance().getConnection();
+        try (Connection connection = connectionManager.getConnection();
              PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setString(1, username);
             stmt.setString(2, password);
@@ -82,7 +87,7 @@ public class UserResource {
     public List<UserModel> getUsers(int limit, int offset) throws SQLException {
         String query = "SELECT * FROM users LIMIT ? OFFSET ?";
         List<UserModel> users = new ArrayList<>();
-        try (Connection connection = ConnectionManager.getInstance().getConnection();
+        try (Connection connection = connectionManager.getConnection();
              PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setInt(1, limit);
             stmt.setInt(2, offset);
@@ -101,7 +106,7 @@ public class UserResource {
 
     public boolean userExists(String username) throws SQLException {
         String query = "SELECT COUNT(*) FROM users WHERE username = ?";
-        try (Connection connection = ConnectionManager.getInstance().getConnection();
+        try (Connection connection = connectionManager.getConnection();
              PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setString(1, username);
             try (ResultSet rs = stmt.executeQuery()) {

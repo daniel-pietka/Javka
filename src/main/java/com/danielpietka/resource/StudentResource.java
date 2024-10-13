@@ -16,11 +16,16 @@ import java.util.logging.Logger;
 
 public class StudentResource {
     private static final Logger logger = Logger.getLogger(StudentResource.class.getName());
+    private final ConnectionManager connectionManager;
+
+    public StudentResource(ConnectionManager connectionManager) {
+        this.connectionManager = connectionManager;
+    }
 
     public void addStudent(StudentModel student) throws SQLException {
         String query = "INSERT INTO students (first_name, last_name, email, birth_date, address, phone_number, gender, " +
                 "created_at, updated_at, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (Connection connection = ConnectionManager.getInstance().getConnection();
+        try (Connection connection = connectionManager.getConnection();
              PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setString(1, student.getFirstName());
             stmt.setString(2, student.getLastName());
@@ -42,7 +47,7 @@ public class StudentResource {
     public void updateStudent(StudentModel student) throws SQLException {
         String query = "UPDATE students SET first_name = ?, last_name = ?, email = ?, birth_date = ?, address = ?, " +
                 "phone_number = ?, gender = ?, updated_at = ?, is_active = ? WHERE id = ?";
-        try (Connection connection = ConnectionManager.getInstance().getConnection();
+        try (Connection connection = connectionManager.getConnection();
              PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setString(1, student.getFirstName());
             stmt.setString(2, student.getLastName());
@@ -63,7 +68,7 @@ public class StudentResource {
 
     public void deleteStudent(int id) throws SQLException {
         String query = "DELETE FROM students WHERE id = ?";
-        try (Connection connection = ConnectionManager.getInstance().getConnection();
+        try (Connection connection = connectionManager.getConnection();
              PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setInt(1, id);
             stmt.executeUpdate();
@@ -75,7 +80,7 @@ public class StudentResource {
 
     public StudentModel getStudentById(int studentId) throws SQLException {
         String query = "SELECT * FROM students WHERE id = ?";
-        try (Connection connection = ConnectionManager.getInstance().getConnection();
+        try (Connection connection = connectionManager.getConnection();
              PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setInt(1, studentId);
             try (ResultSet rs = stmt.executeQuery()) {
@@ -105,7 +110,7 @@ public class StudentResource {
     public List<StudentModel> getStudents(int limit, int offset) throws SQLException {
         String query = "SELECT * FROM students LIMIT ? OFFSET ?";
         List<StudentModel> students = new ArrayList<>();
-        try (Connection connection = ConnectionManager.getInstance().getConnection();
+        try (Connection connection = connectionManager.getConnection();
              PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setInt(1, limit);
             stmt.setInt(2, offset);
@@ -131,22 +136,5 @@ public class StudentResource {
             throw e;
         }
         return students;
-    }
-
-    public boolean studentExists(String email) throws SQLException {
-        String query = "SELECT COUNT(*) FROM students WHERE email = ?";
-        try (Connection connection = ConnectionManager.getInstance().getConnection();
-             PreparedStatement stmt = connection.prepareStatement(query)) {
-            stmt.setString(1, email);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt(1) > 0;
-                }
-            }
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Error checking if student exists: ", e);
-            throw e;
-        }
-        return false;
     }
 }

@@ -2,61 +2,54 @@ package com.danielpietka.config;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Config {
-    private static final Properties properties = new Properties();
     private static final Logger logger = Logger.getLogger(Config.class.getName());
+    private final Properties properties = new Properties();
 
-    static {
-        try (InputStream inputStream = Config.class.getClassLoader().getResourceAsStream("config/config.properties")) {
-            if (inputStream == null) {
-                logger.log(Level.SEVERE, "Error: Unable to find config.properties");
-                throw new RuntimeException("Configuration file not found: config/config.properties");
-            }
+    public Config(String configFilePath) {
+        loadProperties(configFilePath);
+    }
+
+    private void loadProperties(String configFilePath) {
+        try (InputStream inputStream = Files.newInputStream(Paths.get(configFilePath))) {
             properties.load(inputStream);
         } catch (IOException e) {
-            logger.log(Level.SEVERE, "Error loading config.properties: ", e);
-            throw new RuntimeException("Failed to load configuration file", e);
+            logger.log(Level.SEVERE, "Error loading config file: " + configFilePath, e);
+            throw new RuntimeException("Failed to load configuration file: " + configFilePath, e);
         }
     }
 
-    public static String getDatabaseUrl() {
-        return getProperty("db.url", "jdbc:mysql://localhost:3306/default_db");
+    public String getDatabaseUrl() {
+        return properties.getProperty("db.url", "jdbc:mysql://localhost:3306/default_db");
     }
 
-    public static String getDatabaseUser() {
-        return getProperty("db.user", "root");
+    public String getDatabaseUser() {
+        return properties.getProperty("db.user", "root");
     }
 
-    public static String getDatabasePassword() {
-        return getProperty("db.password", "root");
+    public String getDatabasePassword() {
+        return properties.getProperty("db.password", "root");
     }
 
-    public static String getSecretKey() {
-        return getProperty("jwt.secret", "default_secret_key");
+    public int getServerPort() {
+        return Integer.parseInt(properties.getProperty("server.port", "8080"));
     }
 
-    public static int getServerPort() {
-        return Integer.parseInt(getProperty("server.port", "8080"));
+    public String getApiPath(String apiName) {
+        return properties.getProperty(apiName, "/login");
     }
 
-    public static String getApiPath(String apiName) {
-        return getProperty(apiName, "/login");
+    public String getTokenSecret() {
+        return properties.getProperty("token.secret", "default_secret_key");
     }
 
-    public static int getTokenExpiration() {
-        return Integer.parseInt(getProperty("token.expiration", "3600000"));
-    }
-
-    private static String getProperty(String key, String defaultValue) {
-        String value = properties.getProperty(key);
-        if (value == null) {
-            logger.log(Level.WARNING, "Property {0} not found in configuration file. Using default: {1}", new Object[]{key, defaultValue});
-            return defaultValue;
-        }
-        return value;
+    public int getTokenExpiration() {
+        return Integer.parseInt(properties.getProperty("token.expiration", "3600000"));
     }
 }

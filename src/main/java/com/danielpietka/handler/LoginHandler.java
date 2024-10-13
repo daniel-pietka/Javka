@@ -9,18 +9,19 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.logging.Logger;
 
 public class LoginHandler implements HttpHandler {
     private final UserService userService;
+    private final JwtUtil jwtUtil;
     private static final Logger logger = Logger.getLogger(LoginHandler.class.getName());
     private final Gson gson = new Gson();
 
-    public LoginHandler(UserService userService) {
+    public LoginHandler(UserService userService, JwtUtil jwtUtil) {
         this.userService = userService;
+        this.jwtUtil = jwtUtil;
     }
 
     @Override
@@ -30,10 +31,8 @@ public class LoginHandler implements HttpHandler {
             return;
         }
 
-        try (InputStream is = exchange.getRequestBody();
-             InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8)) {
-
-            LoginRequest loginRequest = gson.fromJson(isr, LoginRequest.class);
+        try (InputStreamReader reader = new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8)) {
+            LoginRequest loginRequest = gson.fromJson(reader, LoginRequest.class);
             String username = loginRequest.getUsername();
             String password = loginRequest.getPassword();
 
@@ -44,7 +43,7 @@ public class LoginHandler implements HttpHandler {
 
             var user = userService.authenticateUser(username, password);
             if (user != null) {
-                String token = JwtUtil.generateToken(username);
+                String token = jwtUtil.generateToken(username);
                 String response = gson.toJson(new LoginResponse(token, username));
                 exchange.sendResponseHeaders(200, response.length());
                 exchange.getResponseBody().write(response.getBytes());

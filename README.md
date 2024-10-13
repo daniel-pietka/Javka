@@ -87,7 +87,7 @@ docker compose up java_app_package
 
 ### Start Docker, Compile and Run Java app (Daemon mode)
 
-- Start docker containers `java_app_compile` `java_db` `java_phpmyadmin` with attached logs
+- Start docker containers `java_app_compile` `java_db` `java_phpmyadmin` with Daemon mode
 - Compile the java application to classes
 - Run the java application classes
 
@@ -97,7 +97,7 @@ docker compose up -d java_app_compile
 
 ### Start Docker, Run Java JAR app (Daemon mode)
 
-- Start docker containers `java_app_package` `java_db` `java_phpmyadmin` with attached logs
+- Start docker containers `java_app_package` `java_db` `java_phpmyadmin` with Daemon mode
 - Run the java JAR application
 
 ```bash
